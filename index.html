@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aventura 360</title>
-    <!-- Cargamos A-Frame para el entorno 360 interactivo -->
+    <title>Aventura Interactiva 360</title>
+    <!-- Librería A-Frame para el renderizado 360° -->
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
     
     <style>
@@ -12,7 +12,7 @@
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Segoe UI', Roboto, sans-serif;
         }
 
         body, html {
@@ -22,7 +22,7 @@
             background-color: #000;
         }
 
-        /* Pantallas principales */
+        /* Contenedores de pantallas */
         .screen {
             position: absolute;
             top: 0;
@@ -34,7 +34,7 @@
             justify-content: center;
             align-items: center;
             z-index: 10;
-            transition: opacity 0.5s ease;
+            transition: opacity 0.8s ease, transform 0.8s ease;
         }
 
         .hidden {
@@ -42,21 +42,34 @@
             pointer-events: none !important;
         }
 
-        /* Pantalla de Inicio */
+        /* PANTALLA 1: INICIO */
         #screen-start {
-            background: linear-gradient(135deg, #1e1e2f, #0f0c20);
-            color: white;
+            background: radial-gradient(circle, #1a1a2e 0%, #0f0c20 100%);
+            color: #fff;
             text-align: center;
         }
 
         #screen-start h1 {
             font-size: 3rem;
             margin-bottom: 2rem;
+            text-shadow: 0 0 10px rgba(255,255,255,0.3);
             letter-spacing: 2px;
-            animation: fadeInDown 1s ease;
         }
 
-        /* Interfaz de usuario flotante (sobre el 360) */
+        /* PANTALLA 2: VISOR 360 */
+        #screen-360 {
+            z-index: 1;
+        }
+
+        /* Efecto de Zoom Out/In de la escena entera durante la transición */
+        .tunnel-active-scene {
+            transform: scale(4) rotate(45deg);
+            filter: blur(5px);
+            opacity: 0;
+            transition: all 1.5s cubic-bezier(0.6, -0.28, 0.735, 0.045);
+        }
+
+        /* CAPA DE INTERFAZ SOBRE EL 360 */
         #ui-layer {
             position: absolute;
             top: 0;
@@ -64,105 +77,118 @@
             width: 100%;
             height: 100%;
             z-index: 5;
-            pointer-events: none; /* Deja pasar los clicks al 360 */
+            pointer-events: none; /* Permite arrastrar el 360 de fondo */
             display: flex;
             flex-direction: column;
             justify-content: space-between;
             padding: 2rem;
         }
 
-        /* Botones generales */
+        /* BOTONES */
         .btn {
-            padding: 12px 30px;
+            padding: 15px 35px;
             font-size: 1.2rem;
             font-weight: bold;
             color: white;
-            background: #ff4757;
+            background: linear-gradient(135deg, #ff416c, #ff4b2b);
             border: none;
-            border-radius: 25px;
+            border-radius: 50px;
             cursor: pointer;
-            pointer-events: auto; /* Reactiva los clicks en los botones */
-            box-shadow: 0 4px 15px rgba(255, 71, 87, 0.4);
+            pointer-events: auto;
+            box-shadow: 0 5px 20px rgba(255, 75, 43, 0.4);
             transition: all 0.3s ease;
         }
 
         .btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 6px 20px rgba(255, 71, 87, 0.6);
-            background: #ff6b81;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(255, 75, 43, 0.6);
         }
 
-        .btn-nav {
+        .btn-sigamos {
             align-self: center;
-            margin-bottom: 2rem;
-            background: #2ed573;
-            box-shadow: 0 4px 15px rgba(46, 213, 115, 0.4);
-        }
-        .btn-nav:hover {
-            background: #5edfff;
-            box-shadow: 0 6px 20px rgba(94, 223, 255, 0.6);
-            color: #000;
+            margin-bottom: 3rem;
+            background: linear-gradient(135deg, #11998e, #38ef7d);
+            box-shadow: 0 5px 20px rgba(56, 239, 125, 0.4);
         }
 
+        .btn-sigamos:hover {
+            box-shadow: 0 8px 25px rgba(56, 239, 125, 0.6);
+        }
+
+        /* Botón Volver al inicio (Siempre flotando arriba a la derecha) */
         .btn-home {
             position: absolute;
-            top: 2rem;
-            right: 2rem;
-            background: rgba(255, 255, 255, 0.2);
-            backdrop-filter: blur(5px);
+            top: 1.5rem;
+            right: 1.5rem;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.25);
             font-size: 0.9rem;
-            padding: 8px 20px;
-            border: 1px solid rgba(255, 255, 255, 0.4);
+            padding: 10px 20px;
             box-shadow: none;
-        }
-        .btn-home:hover {
-            background: rgba(255, 255, 255, 0.4);
+            color: #fff;
+            z-index: 30; /* Siempre por encima */
         }
 
-        /* Animación del Túnel / Agujero */
-        #tunnel-overlay {
+        .btn-home:hover {
+            background: rgba(255, 255, 255, 0.35);
+            transform: translateY(-1px);
+        }
+
+        /* ANIMACIÓN EFECTO TÚNEL/VÓRTICE */
+        #tunnel-vortex {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            z-index: 20;
+            z-index: 15;
             background: radial-gradient(circle, transparent 100%, #000 100%);
             pointer-events: none;
             opacity: 0;
+            transition: opacity 0.5s ease;
         }
 
-        .animate-tunnel {
-            animation: tunnelEffect 1.8s forwards ease-in-out;
+        .show-vortex {
+            opacity: 1 !important;
+            animation: vortexPulse 1.5s infinite linear;
         }
 
-        /* Pantalla Final */
-        #screen-end {
-            background: #000;
-            color: #fff;
-            font-size: 4rem;
-            font-weight: bold;
-            letter-spacing: 5px;
-        }
-
-        /* Keyframes */
-        @keyframes fadeInDown {
-            from { opacity: 0; transform: translateY(-20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        @keyframes tunnelEffect {
+        @keyframes vortexPulse {
             0% {
-                opacity: 1;
                 background: radial-gradient(circle, transparent 100%, #000 100%);
             }
             50% {
-                background: radial-gradient(circle, transparent 30%, #0f0c20 70%, #000 100%);
+                background: radial-gradient(circle, rgba(17, 153, 142, 0.3) 30%, #000000 70%);
             }
             100% {
-                opacity: 1;
-                background: radial-gradient(circle, transparent 0%, #000 0%);
+                background: radial-gradient(circle, transparent 0%, #000000 0%);
             }
+        }
+
+        /* PANTALLA 3: CÓDIGO "FIN" */
+        #screen-end {
+            background: #000000;
+            color: #ffffff;
+            z-index: 20;
+        }
+
+        /* Estilos de ejemplo para tu sección "Fin". Puedes editarlos libremente */
+        .fin-content {
+            text-align: center;
+            animation: zoomIn 1s ease-out;
+        }
+
+        .fin-content h2 {
+            font-size: 4rem;
+            letter-spacing: 5px;
+            color: #38ef7d;
+            text-shadow: 0 0 20px rgba(56, 239, 125, 0.5);
+        }
+
+        @keyframes zoomIn {
+            from { transform: scale(0.5); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
         }
     </style>
 </head>
@@ -171,91 +197,149 @@
     <!-- Elemento de Audio Oculto -->
     <audio id="mu-audio" src="MU.mp3" loop></audio>
 
+    <!-- Botón global "Volver al inicio" (Se controla dinámicamente si se muestra o no) -->
+    <button id="global-home-btn" class="btn btn-home hidden" onclick="resetToStart()">Volver al inicio</button>
+
     <!-- 1. PANTALLA DE INICIO -->
     <div id="screen-start" class="screen">
         <h1>Que esta aventura comience</h1>
         <button class="btn" onclick="startAdventure()">Comenzar</button>
     </div>
 
-    <!-- 2. ENTORNO INTERACTIVO 360 (A-Frame) -->
-    <div id="screen-360" class="screen hidden" style="z-index: 1;">
-        <!-- Escena 360 -->
+    <!-- 2. VISOR 360 (A-FRAME) -->
+    <div id="screen-360" class="screen hidden">
         <a-scene embedded vr-mode-ui="enabled: false" loading-screen="enabled: false">
-            <!-- Imagen 360 cargada dinámicamente -->
             <a-sky src="IMA_1.png" rotation="0 -90 0"></a-sky>
             
-            <!-- Cámara con controles de mouse/touch y zoom con scroll integrado -->
-            <a-entity camera look-controls="reverseMouseDrag: true"></a-entity>
+            <!-- Cámara con controles de rotación y script de Zoom integrado -->
+            <a-entity camera look-controls="reverseMouseDrag: true" zoom-controls></a-entity>
         </a-scene>
 
-        <!-- Capa de UI flotante -->
+        <!-- Capa del botón "Sigamos" -->
         <div id="ui-layer">
-            <!-- Botón Volver al inicio (Siempre disponible) -->
-            <button class="btn btn-home" onclick="resetToStart()">Volver al inicio</button>
-            <div></div> <!-- Espaciador -->
-            <!-- Botón Sigamos -->
-            <button class="btn btn-nav" onclick="triggerTunnel()">Sigamos</button>
+            <div></div> <!-- Relleno superior -->
+            <button class="btn btn-sigamos" onclick="triggerTunnel()">Sigamos</button>
         </div>
     </div>
 
-    <!-- EFECTO EFÍMERO DE TÚNEL -->
-    <div id="tunnel-overlay"></div>
+    <!-- Efecto visual del túnel espacial -->
+    <div id="tunnel-vortex"></div>
 
-    <!-- 3. PANTALLA FINAL -->
+    <!-- 3. PANTALLA DE CÓDIGO HTML "FIN" -->
     <div id="screen-end" class="screen hidden">
-        <div>Fin</div>
-        <!-- Botón Volver al inicio (También aquí disponible) -->
-        <button class="btn btn-home" onclick="resetToStart()">Volver al inicio</button>
+        
+        <!-- ================================================================= -->
+        <!-- INICIO DE TU CÓDIGO HTML PERSONALIZADO DENOMINADO "FIN"           -->
+        <!-- Puedes reemplazar todo lo que esté dentro de este contenedor      -->
+        <!-- ================================================================= -->
+        <div class="fin-content">
+            <h2>FIN</h2>
+            <p style="color: #aaa; margin-top: 10px;">La aventura ha terminado con éxito.</p>
+        </div>
+        <!-- ================================================================= -->
+        <!-- FIN DE TU CÓDIGO HTML "FIN"                                       -->
+        <!-- ================================================================= -->
+
     </div>
 
-    <!-- LÓGICA DE CONTROL -->
+    <!-- SCRIPTS DE CONTROL -->
     <script>
+        // Componente de A-Frame para habilitar Zoom táctil y scroll de ratón de forma nativa
+        AFRAME.registerComponent('zoom-controls', {
+            init: function () {
+                const camera = this.el;
+                let fov = 80; // Fov inicial
+                
+                // Zoom con rueda de ratón
+                window.addEventListener('wheel', (e) => {
+                    if (document.getElementById('screen-360').classList.contains('hidden')) return;
+                    fov += e.deltaY * 0.05;
+                    fov = Math.max(30, Math.min(100, fov)); // Límites de zoom
+                    camera.setAttribute('camera', 'fov', fov);
+                });
+
+                // Zoom táctil (Pinch to zoom) en móviles
+                let touchStartDist = 0;
+                window.addEventListener('touchstart', (e) => {
+                    if (e.touches.length === 2) {
+                        touchStartDist = Math.hypot(
+                            e.touches[0].pageX - e.touches[1].pageX,
+                            e.touches[0].pageY - e.touches[1].pageY
+                        );
+                    }
+                });
+
+                window.addEventListener('touchmove', (e) => {
+                    if (document.getElementById('screen-360').classList.contains('hidden')) return;
+                    if (e.touches.length === 2 && touchStartDist) {
+                        const dist = Math.hypot(
+                            e.touches[0].pageX - e.touches[1].pageX,
+                            e.touches[0].pageY - e.touches[1].pageY
+                        );
+                        const factor = (touchStartDist - dist) * 0.1;
+                        fov += factor;
+                        fov = Math.max(30, Math.min(100, fov));
+                        camera.setAttribute('camera', 'fov', fov);
+                        touchStartDist = dist;
+                    }
+                });
+            }
+        });
+
+        // Selectores de Elementos
         const audio = document.getElementById('mu-audio');
         const screenStart = document.getElementById('screen-start');
         const screen360 = document.getElementById('screen-360');
         const screenEnd = document.getElementById('screen-end');
-        const tunnelOverlay = document.getElementById('tunnel-overlay');
+        const tunnelVortex = document.getElementById('tunnel-vortex');
+        const globalHomeBtn = document.getElementById('global-home-btn');
 
-        // Función para iniciar la aventura y reproducir música
+        // 1. Iniciar aventura
         function startAdventure() {
             screenStart.classList.add('hidden');
             screen360.classList.remove('hidden');
+            globalHomeBtn.classList.remove('hidden'); // Mostrar botón de regresar
             
-            // Intenta reproducir la música (requiere interacción previa del usuario)
+            // Reproducción de música (MU.mp3)
             audio.currentTime = 0;
-            audio.play().catch(error => {
-                console.log("El navegador bloqueó el autoplay temporalmente:", error);
-            });
+            audio.play().catch(err => console.log("Interacción previa necesaria para el audio:", err));
         }
 
-        // Función para activar la animación de entrada al túnel e ir al final
+        // 2. Transición Túnel / Agujero de gusano
         function triggerTunnel() {
-            tunnelOverlay.classList.add('animate-tunnel');
-            
-            // Espera a que la animación del túnel cubra la pantalla para hacer el cambio
+            // Activar efectos visuales del túnel
+            tunnelVortex.classList.add('show-vortex');
+            screen360.classList.add('tunnel-active-scene');
+
+            // Después de 1.5s (duración de la transición), mostramos el código HTML "Fin"
             setTimeout(() => {
                 screen360.classList.add('hidden');
+                screen360.classList.remove('tunnel-active-scene');
+                tunnelVortex.classList.remove('show-vortex');
+                
                 screenEnd.classList.remove('hidden');
-                tunnelOverlay.classList.remove('animate-tunnel');
-            }, 1500); // Duración sincronizada con el CSS
+            }, 1500);
         }
 
-        // Función global para reiniciar la experiencia en cualquier momento
+        // 3. Volver al Inicio (Siempre disponible)
         function resetToStart() {
-            // Detener y resetear audio
+            // Pausar y resetear audio
             audio.pause();
             audio.currentTime = 0;
 
-            // Resetear visibilidad de pantallas
+            // Ocultar pantallas secundarias y el botón "Volver al inicio"
             screenEnd.classList.add('hidden');
             screen360.classList.add('hidden');
-            tunnelOverlay.className = ''; // Limpia clases de animación
-            screenStart.classList.remove('hidden');
+            globalHomeBtn.classList.add('hidden');
             
-            // Opcional: Resetear la rotación de la cámara de A-Frame al volver
-            const camera = document.querySelector('[camera]');
-            if(camera) {
-                camera.setAttribute('rotation', '0 0 0');
+            // Mostrar pantalla de inicio
+            screenStart.classList.remove('hidden');
+
+            // Resetear la cámara 360 a la vista por defecto
+            const cameraEl = document.querySelector('[camera]');
+            if (cameraEl) {
+                cameraEl.setAttribute('camera', 'fov', 80);
+                cameraEl.setAttribute('rotation', '0 0 0');
             }
         }
     </script>
