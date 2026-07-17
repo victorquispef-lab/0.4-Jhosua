@@ -115,23 +115,23 @@
             box-shadow: 0 8px 25px rgba(56, 239, 125, 0.6);
         }
 
-        /* Botón Volver al inicio (Siempre flotando arriba a la derecha) */
+        /* Botón Volver al inicio (Siempre flotando arriba, con z-index alto para superar al iframe) */
         .btn-home {
             position: absolute;
             top: 1.5rem;
             right: 1.5rem;
-            background: rgba(255, 255, 255, 0.15);
+            background: rgba(255, 255, 255, 0.2);
             backdrop-filter: blur(8px);
-            border: 1px solid rgba(255, 255, 255, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.3);
             font-size: 0.9rem;
             padding: 10px 20px;
-            box-shadow: none;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
             color: #fff;
-            z-index: 30; /* Siempre por encima */
+            z-index: 9999; /* Máxima prioridad para que siempre sea cliqueable */
         }
 
         .btn-home:hover {
-            background: rgba(255, 255, 255, 0.35);
+            background: rgba(255, 255, 255, 0.4);
             transform: translateY(-1px);
         }
 
@@ -166,29 +166,19 @@
             }
         }
 
-        /* PANTALLA 3: CÓDIGO "FIN" */
+        /* PANTALLA 3: CONTENEDOR DEL IFRAME PARA EL HTML "FIN" */
         #screen-end {
             background: #000000;
-            color: #ffffff;
             z-index: 20;
+            width: 100%;
+            height: 100%;
         }
 
-        /* Estilos de ejemplo para tu sección "Fin". Puedes editarlos libremente */
-        .fin-content {
-            text-align: center;
-            animation: zoomIn 1s ease-out;
-        }
-
-        .fin-content h2 {
-            font-size: 4rem;
-            letter-spacing: 5px;
-            color: #38ef7d;
-            text-shadow: 0 0 20px rgba(56, 239, 125, 0.5);
-        }
-
-        @keyframes zoomIn {
-            from { transform: scale(0.5); opacity: 0; }
-            to { transform: scale(1); opacity: 1; }
+        #iframe-fin {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: #000;
         }
     </style>
 </head>
@@ -197,7 +187,7 @@
     <!-- Elemento de Audio Oculto -->
     <audio id="mu-audio" src="MU.mp3" loop></audio>
 
-    <!-- Botón global "Volver al inicio" (Se controla dinámicamente si se muestra o no) -->
+    <!-- Botón global "Volver al inicio" (Siempre por encima de todo) -->
     <button id="global-home-btn" class="btn btn-home hidden" onclick="resetToStart()">Volver al inicio</button>
 
     <!-- 1. PANTALLA DE INICIO -->
@@ -225,40 +215,27 @@
     <!-- Efecto visual del túnel espacial -->
     <div id="tunnel-vortex"></div>
 
-    <!-- 3. PANTALLA DE CÓDIGO HTML "FIN" -->
+    <!-- 3. PANTALLA QUE CARGA TU ARCHIVO HTML EXTERNO "FIN" -->
     <div id="screen-end" class="screen hidden">
-        
-        <!-- ================================================================= -->
-        <!-- INICIO DE TU CÓDIGO HTML PERSONALIZADO DENOMINADO "FIN"           -->
-        <!-- Puedes reemplazar todo lo que esté dentro de este contenedor      -->
-        <!-- ================================================================= -->
-        <div class="fin-content">
-            <h2>FIN</h2>
-            <p style="color: #aaa; margin-top: 10px;">La aventura ha terminado con éxito.</p>
-        </div>
-        <!-- ================================================================= -->
-        <!-- FIN DE TU CÓDIGO HTML "FIN"                                       -->
-        <!-- ================================================================= -->
-
+        <!-- Cargamos el HTML externo usando un Iframe para que se ejecute de forma aislada y limpia -->
+        <iframe id="iframe-fin" src=""></iframe>
     </div>
 
     <!-- SCRIPTS DE CONTROL -->
     <script>
-        // Componente de A-Frame para habilitar Zoom táctil y scroll de ratón de forma nativa
+        // Componente de A-Frame para habilitar Zoom táctil y scroll de ratón
         AFRAME.registerComponent('zoom-controls', {
             init: function () {
                 const camera = this.el;
-                let fov = 80; // Fov inicial
+                let fov = 80;
                 
-                // Zoom con rueda de ratón
                 window.addEventListener('wheel', (e) => {
                     if (document.getElementById('screen-360').classList.contains('hidden')) return;
                     fov += e.deltaY * 0.05;
-                    fov = Math.max(30, Math.min(100, fov)); // Límites de zoom
+                    fov = Math.max(30, Math.min(100, fov));
                     camera.setAttribute('camera', 'fov', fov);
                 });
 
-                // Zoom táctil (Pinch to zoom) en móviles
                 let touchStartDist = 0;
                 window.addEventListener('touchstart', (e) => {
                     if (e.touches.length === 2) {
@@ -293,29 +270,33 @@
         const screenEnd = document.getElementById('screen-end');
         const tunnelVortex = document.getElementById('tunnel-vortex');
         const globalHomeBtn = document.getElementById('global-home-btn');
+        const iframeFin = document.getElementById('iframe-fin');
 
-        // 1. Iniciar aventura
+        // 1. Iniciar aventura (reproduce música)
         function startAdventure() {
             screenStart.classList.add('hidden');
             screen360.classList.remove('hidden');
-            globalHomeBtn.classList.remove('hidden'); // Mostrar botón de regresar
+            globalHomeBtn.classList.remove('hidden'); // Activar botón de regreso
             
-            // Reproducción de música (MU.mp3)
             audio.currentTime = 0;
-            audio.play().catch(err => console.log("Interacción previa necesaria para el audio:", err));
+            audio.play().catch(err => console.log("Permisos de reproducción requeridos:", err));
         }
 
-        // 2. Transición Túnel / Agujero de gusano
+        // 2. Transición Túnel y carga del archivo HTML externo
         function triggerTunnel() {
-            // Activar efectos visuales del túnel
             tunnelVortex.classList.add('show-vortex');
             screen360.classList.add('tunnel-active-scene');
 
-            // Después de 1.5s (duración de la transición), mostramos el código HTML "Fin"
+            // Después de la animación de 1.5s, cargamos el HTML externo y ocultamos el 360
             setTimeout(() => {
                 screen360.classList.add('hidden');
                 screen360.classList.remove('tunnel-active-scene');
                 tunnelVortex.classList.remove('show-vortex');
+                
+                // IMPORTANTE: Aquí se lee tu archivo. 
+                // Si tu archivo se llama exactamente "Fin" (sin extensión .html), déjalo como 'Fin'.
+                // Si se llama "Fin.html", cámbialo a 'Fin.html' en la línea de abajo.
+                iframeFin.src = 'Fin.html'; 
                 
                 screenEnd.classList.remove('hidden');
             }, 1500);
@@ -323,19 +304,20 @@
 
         // 3. Volver al Inicio (Siempre disponible)
         function resetToStart() {
-            // Pausar y resetear audio
+            // Pausar audio
             audio.pause();
             audio.currentTime = 0;
 
-            // Ocultar pantallas secundarias y el botón "Volver al inicio"
+            // Limpiar la fuente del iframe para que deje de ejecutarse en segundo plano
+            iframeFin.src = '';
+
+            // Resetear visibilidad
             screenEnd.classList.add('hidden');
             screen360.classList.add('hidden');
             globalHomeBtn.classList.add('hidden');
-            
-            // Mostrar pantalla de inicio
             screenStart.classList.remove('hidden');
 
-            // Resetear la cámara 360 a la vista por defecto
+            // Resetear cámara de A-Frame
             const cameraEl = document.querySelector('[camera]');
             if (cameraEl) {
                 cameraEl.setAttribute('camera', 'fov', 80);
