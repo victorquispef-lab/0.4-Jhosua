@@ -3,431 +3,261 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Feliz Cumpleaños Joshua</title>
+    <title>Aventura 360</title>
+    <!-- Cargamos A-Frame para el entorno 360 interactivo -->
+    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+    
     <style>
-        :root {
-            --gold: #ffb703;
-            --warm-amber: #fb8500;
-            --cosmic-blue: #00b4d8;
-            --light-blue: #90e0ef;
-            --pure-white: #ffffff;
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body, html { 
-            width: 100%; 
-            height: 100%; 
-            overflow: hidden; 
-            background-color: #010103; 
-            font-family: 'Cinzel', 'Georgia', serif;
-        }
-
-        canvas {
-            display: block;
+        body, html {
             width: 100%;
             height: 100%;
+            overflow: hidden;
+            background-color: #000;
+        }
+
+        /* Pantallas principales */
+        .screen {
             position: absolute;
             top: 0;
             left: 0;
-            z-index: 1;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            transition: opacity 0.5s ease;
         }
 
-        /* Capa de Texto de Revelación */
-        .message-container {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%) scale(0.7);
+        .hidden {
+            opacity: 0 !important;
+            pointer-events: none !important;
+        }
+
+        /* Pantalla de Inicio */
+        #screen-start {
+            background: linear-gradient(135deg, #1e1e2f, #0f0c20);
+            color: white;
             text-align: center;
-            z-index: 10;
-            pointer-events: none;
-            width: 90%;
-            max-width: 900px;
-            opacity: 0;
-            /* Transiciones ultra suaves para aparecer y desaparecer */
-            transition: opacity 1.5s ease-in-out, transform 1.8s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
 
-        /* Se activa únicamente tras disiparse la explosión */
-        .message-container.active {
-            opacity: 1;
-            transform: translate(-50%, -50%) scale(1);
-        }
-
-        .glow-title {
-            font-size: 3.8rem;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 5px;
-            margin-bottom: 20px;
-            background: linear-gradient(135deg, var(--pure-white) 0%, var(--light-blue) 35%, var(--gold) 70%, var(--warm-amber) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            filter: drop-shadow(0 0 20px rgba(0, 180, 216, 0.7)) drop-shadow(0 0 35px rgba(251, 133, 0, 0.5));
-        }
-
-        .glow-subtitle {
-            font-size: 2.1rem;
-            font-weight: 400;
+        #screen-start h1 {
+            font-size: 3rem;
+            margin-bottom: 2rem;
             letter-spacing: 2px;
-            color: var(--pure-white);
-            text-shadow: 0 0 15px rgba(144, 224, 239, 0.9), 0 0 30px rgba(251, 133, 0, 0.6);
-            font-style: italic;
+            animation: fadeInDown 1s ease;
         }
 
-        /* Indicador táctil */
-        .interaction-hint {
+        /* Interfaz de usuario flotante (sobre el 360) */
+        #ui-layer {
             position: absolute;
-            bottom: 30px;
-            left: 50%;
-            transform: translateX(-50%);
-            color: rgba(144, 224, 239, 0.4);
-            font-size: 0.85rem;
-            letter-spacing: 3px;
-            z-index: 10;
-            pointer-events: none;
-            font-family: system-ui, sans-serif;
-            text-transform: uppercase;
-            opacity: 0;
-            transition: opacity 1s ease;
-        }
-        .interaction-hint.visible {
-            opacity: 1;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 5;
+            pointer-events: none; /* Deja pasar los clicks al 360 */
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 2rem;
         }
 
-        @media (max-width: 768px) {
-            .glow-title { font-size: 2.2rem; letter-spacing: 2px; }
-            .glow-subtitle { font-size: 1.2rem; }
+        /* Botones generales */
+        .btn {
+            padding: 12px 30px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: white;
+            background: #ff4757;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            pointer-events: auto; /* Reactiva los clicks en los botones */
+            box-shadow: 0 4px 15px rgba(255, 71, 87, 0.4);
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(255, 71, 87, 0.6);
+            background: #ff6b81;
+        }
+
+        .btn-nav {
+            align-self: center;
+            margin-bottom: 2rem;
+            background: #2ed573;
+            box-shadow: 0 4px 15px rgba(46, 213, 115, 0.4);
+        }
+        .btn-nav:hover {
+            background: #5edfff;
+            box-shadow: 0 6px 20px rgba(94, 223, 255, 0.6);
+            color: #000;
+        }
+
+        .btn-home {
+            position: absolute;
+            top: 2rem;
+            right: 2rem;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(5px);
+            font-size: 0.9rem;
+            padding: 8px 20px;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            box-shadow: none;
+        }
+        .btn-home:hover {
+            background: rgba(255, 255, 255, 0.4);
+        }
+
+        /* Animación del Túnel / Agujero */
+        #tunnel-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 20;
+            background: radial-gradient(circle, transparent 100%, #000 100%);
+            pointer-events: none;
+            opacity: 0;
+        }
+
+        .animate-tunnel {
+            animation: tunnelEffect 1.8s forwards ease-in-out;
+        }
+
+        /* Pantalla Final */
+        #screen-end {
+            background: #000;
+            color: #fff;
+            font-size: 4rem;
+            font-weight: bold;
+            letter-spacing: 5px;
+        }
+
+        /* Keyframes */
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes tunnelEffect {
+            0% {
+                opacity: 1;
+                background: radial-gradient(circle, transparent 100%, #000 100%);
+            }
+            50% {
+                background: radial-gradient(circle, transparent 30%, #0f0c20 70%, #000 100%);
+            }
+            100% {
+                opacity: 1;
+                background: radial-gradient(circle, transparent 0%, #000 0%);
+            }
         }
     </style>
 </head>
 <body>
 
-    <canvas id="galaxy-canvas"></canvas>
+    <!-- Elemento de Audio Oculto -->
+    <audio id="mu-audio" src="MU.mp3" loop></audio>
 
-    <!-- La frase exacta que me solicitaste -->
-    <div class="message-container" id="text-reveal">
-        <h1 class="glow-title">Feliz cumpleños Joshua</h1>
-        <p class="glow-subtitle">se tu propio heroe tu vida</p>
+    <!-- 1. PANTALLA DE INICIO -->
+    <div id="screen-start" class="screen">
+        <h1>Que esta aventura comience</h1>
+        <button class="btn" onclick="startAdventure()">Comenzar</button>
     </div>
 
-    <div class="interaction-hint" id="hint-tag">Explora el espacio con tu dedo 🌌</div>
-
-    <script>
-        const canvas = document.getElementById('galaxy-canvas');
-        const ctx = canvas.getContext('2d');
-
-        let width = canvas.width = window.innerWidth;
-        let height = canvas.height = window.innerHeight;
-
-        // --- AJUSTES DE ESCALA MASIVA ---
-        const numParticles = 4500; 
-        const particles = [];
-        const arms = 3;
-        const armSpread = 0.38;
-
-        // --- MÁQUINA DE TIEMPOS (Crono-ciclo en milisegundos) ---
-        const TIME_SWIRL = 4500;         // Fase 1: Remolino (4.5s)
-        const TIME_EXPLODE_ONLY = 2000;  // Fase 2: Explosión pura sin texto (2s)
-        const TIME_TEXT_SHOW = 6000;     // Fase 3: Mensaje visible (6s)
-        const TIME_FADE_OUT = 1500;      // Fase 4: Desvanecimiento e inercia final (1.5s)
-
-        // Puntos de transición de la línea de tiempo
-        const END_SWIRL = TIME_SWIRL;
-        const END_EXPLODE = END_SWIRL + TIME_EXPLODE_ONLY;
-        const END_TEXT_SHOW = END_EXPLODE + TIME_TEXT_SHOW;
-        const END_CYCLE = END_TEXT_SHOW + TIME_FADE_OUT; // Duración total del loop: 14 segundos
-
-        const STATE_SWIRL = 0;
-        const STATE_EXPLODE = 1;
-        let currentState = STATE_SWIRL;
-
-        let initTime = Date.now();
-        let explosionTriggered = false;
-
-        // --- CREACIÓN DE ESTRELLAS GRANDES ---
-        for (let i = 0; i < numParticles; i++) {
-            const rStart = Math.pow(Math.random(), 1.8) * 700 + 30; 
-            const arm = i % arms;
-            const armAngle = (arm * 2 * Math.PI) / arms;
-            const theta = rStart * 0.007 + armAngle;
-
-            const x = Math.cos(theta) * rStart + (Math.random() - 0.5) * rStart * armSpread;
-            const z = Math.sin(theta) * rStart + (Math.random() - 0.5) * rStart * armSpread;
-            const y = (Math.random() - 0.5) * (750 - rStart) * 0.18; 
-
-            let color;
-            const randColor = Math.random();
-
-            if (rStart < 85) {
-                // Núcleo Supermasivo: Blanco estelar puro
-                color = `rgba(255, 255, 255, ${0.85 + Math.random() * 0.15})`;
-            } else if (randColor < 0.45) {
-                // Brazos de Fuego Cálido (Tonos cálidos)
-                color = Math.random() > 0.5 
-                    ? `rgba(251, 133, 0, ${0.55 + Math.random() * 0.45})` 
-                    : `rgba(255, 183, 3, ${0.65 + Math.random() * 0.35})`; 
-            } else if (randColor < 0.85) {
-                // Polvo de Gas Frío (Tonos Azules)
-                color = Math.random() > 0.5
-                    ? `rgba(0, 180, 216, ${0.55 + Math.random() * 0.45})`  
-                    : `rgba(144, 224, 239, ${0.65 + Math.random() * 0.35})`; 
-            } else {
-                // Polvo de plata de fondo
-                color = `rgba(255, 255, 255, ${0.4 + Math.random() * 0.5})`;
-            }
-
-            const orbitSpeed = (0.012 + (750 - rStart) * 0.00008) * (0.85 + Math.random() * 0.3);
-
-            particles.push({
-                arm: arm,
-                originalR: rStart,
-                r: rStart,
-                theta: theta,
-                originalTheta: theta,
-                orbitSpeed: orbitSpeed,
-                yBase: y,
-                seed: Math.random() * 100,
-                
-                currentX: x,
-                currentY: y,
-                currentZ: z,
-
-                vx: 0,
-                vy: 0,
-                vz: 0,
-                
-                size: Math.random() * 3.8 + 1.8, 
-                color: color
-            });
-        }
-
-        // --- SISTEMA DE CÁMARA TRIDIMENSIONAL INTERACTIVA ---
-        let isDragging = false;
-        let previousMousePosition = { x: 0, y: 0 };
-        let angleX = 0.55; 
-        let angleY = 0;
-        let autoRotateSpeed = 0.0022; 
-
-        // Capturas para Ratón
-        window.addEventListener('mousedown', (e) => {
-            isDragging = true;
-            previousMousePosition = { x: e.clientX, y: e.clientY };
-        });
-        window.addEventListener('mousemove', (e) => {
-            if (!isDragging) return;
-            const deltaX = e.clientX - previousMousePosition.x;
-            const deltaY = e.clientY - previousMousePosition.y;
-            angleY += deltaX * 0.004;
-            angleX += deltaY * 0.004;
-            previousMousePosition = { x: e.clientX, y: e.clientY };
-        });
-        window.addEventListener('mouseup', () => isDragging = false);
-
-        // Capturas para Pantallas Táctiles
-        window.addEventListener('touchstart', (e) => {
-            isDragging = true;
-            previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-        });
-        window.addEventListener('touchmove', (e) => {
-            if (!isDragging) return;
-            const deltaX = e.touches[0].clientX - previousMousePosition.x;
-            const deltaY = e.touches[0].clientY - previousMousePosition.y;
-            angleY += deltaX * 0.004;
-            angleX += deltaY * 0.004;
-            previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-        });
-        window.addEventListener('touchend', () => isDragging = false);
-
-
-        // --- FUNCIÓN DE RESETEO AUTOMÁTICO (BUCLE INFINITO) ---
-        function resetGalaxy() {
-            currentState = STATE_SWIRL;
-            initTime = Date.now();
-            explosionTriggered = false;
-
-            // Quitar clases de visibilidad
-            document.getElementById("text-reveal").classList.remove("active");
-            document.getElementById("hint-tag").classList.remove("visible");
-
-            // Re-vincular físicas de inicio
-            particles.forEach(p => {
-                p.r = p.originalR;
-                p.theta = p.originalTheta;
-                p.vx = 0;
-                p.vy = 0;
-                p.vz = 0;
-                p.currentX = Math.cos(p.theta) * p.r;
-                p.currentZ = Math.sin(p.theta) * p.r;
-                p.currentY = p.yBase;
-            });
-        }
-
-
-        // --- RENDER MOTOR PRINCIPAL ---
-        function render() {
-            const elapsedTime = Date.now() - initTime;
-
-            // Rastro estelar cósmico
-            ctx.fillStyle = 'rgba(1, 1, 3, 0.14)';
-            ctx.fillRect(0, 0, width, height);
-
-            // --- EJECUCIÓN BASADA EN LA LÍNEA TEMPORAL ---
+    <!-- 2. ENTORNO INTERACTIVO 360 (A-Frame) -->
+    <div id="screen-360" class="screen hidden" style="z-index: 1;">
+        <!-- Escena 360 -->
+        <a-scene embedded vr-mode-ui="enabled: false" loading-screen="enabled: false">
+            <!-- Imagen 360 cargada dinámicamente -->
+            <a-sky src="IMA_1.png" rotation="0 -90 0"></a-sky>
             
-            if (elapsedTime < END_SWIRL) {
-                // [FASE 1]: EFECTO REMOLINO INTENSO
-                currentState = STATE_SWIRL;
-                if (!isDragging) { angleY += autoRotateSpeed; }
+            <!-- Cámara con controles de mouse/touch y zoom con scroll integrado -->
+            <a-entity camera look-controls="reverseMouseDrag: true"></a-entity>
+        </a-scene>
 
-                const progress = elapsedTime / END_SWIRL; 
+        <!-- Capa de UI flotante -->
+        <div id="ui-layer">
+            <!-- Botón Volver al inicio (Siempre disponible) -->
+            <button class="btn btn-home" onclick="resetToStart()">Volver al inicio</button>
+            <div></div> <!-- Espaciador -->
+            <!-- Botón Sigamos -->
+            <button class="btn btn-nav" onclick="triggerTunnel()">Sigamos</button>
+        </div>
+    </div>
 
-                particles.forEach(p => {
-                    // Colapso espiral hacia el centro
-                    p.r = p.originalR * (1 - progress * 0.78); 
-                    
-                    // Incremento rotacional acelerado
-                    const currentSpeed = p.orbitSpeed * (1 + progress * 3.0);
-                    p.theta += currentSpeed;
+    <!-- EFECTO EFÍMERO DE TÚNEL -->
+    <div id="tunnel-overlay"></div>
 
-                    // Vibraciones térmicas de pre-explosión
-                    const shake = Math.sin(elapsedTime * 0.008 + p.seed) * (2 + progress * 6);
+    <!-- 3. PANTALLA FINAL -->
+    <div id="screen-end" class="screen hidden">
+        <div>Fin</div>
+        <!-- Botón Volver al inicio (También aquí disponible) -->
+        <button class="btn btn-home" onclick="resetToStart()">Volver al inicio</button>
+    </div>
 
-                    p.currentX = Math.cos(p.theta) * p.r + shake;
-                    p.currentZ = Math.sin(p.theta) * p.r + shake;
-                    p.currentY = p.yBase * (1 - progress * 0.6) + Math.cos(elapsedTime * 0.005 + p.seed) * 3;
-                });
+    <!-- LÓGICA DE CONTROL -->
+    <script>
+        const audio = document.getElementById('mu-audio');
+        const screenStart = document.getElementById('screen-start');
+        const screen360 = document.getElementById('screen-360');
+        const screenEnd = document.getElementById('screen-end');
+        const tunnelOverlay = document.getElementById('tunnel-overlay');
 
-            } else if (elapsedTime >= END_SWIRL && elapsedTime < END_EXPLODE) {
-                // [FASE 2]: SÚPER EXPLOSIÓN DE ENERGÍA (SIN LETRAS AÚN)
-                currentState = STATE_EXPLODE;
-                if (!isDragging) { angleY += autoRotateSpeed * 0.25; }
-
-                if (!explosionTriggered) {
-                    explosionTriggered = true;
-                    // Proyección radial masiva instantánea
-                    particles.forEach(p => {
-                        const dist = Math.sqrt(p.currentX * p.currentX + p.currentY * p.currentY + p.currentZ * p.currentZ) || 1;
-                        const force = (Math.random() * 24 + 14); 
-                        p.vx = (p.currentX / dist) * force;
-                        p.vy = (p.currentY / dist) * force;
-                        p.vz = (p.currentZ / dist) * force;
-                    });
-                }
-
-                // Aplicar movimiento físico inercial con fricción del vacío
-                particles.forEach(p => {
-                    p.currentX += p.vx;
-                    p.currentY += p.vy;
-                    p.currentZ += p.vz;
-
-                    p.vx *= 0.94;
-                    p.vy *= 0.94;
-                    p.vz *= 0.94;
-                });
-
-            } else if (elapsedTime >= END_EXPLODE && elapsedTime < END_TEXT_SHOW) {
-                // [FASE 3]: APARICIÓN DE LAS LETRAS (SE COMPORTA COMO NEBULOSA EN DERIVA)
-                document.getElementById("text-reveal").classList.add("active");
-                document.getElementById("hint-tag").classList.add("visible");
-                if (!isDragging) { angleY += autoRotateSpeed * 0.18; }
-
-                particles.forEach(p => {
-                    p.currentX += p.vx;
-                    p.currentY += p.vy;
-                    p.currentZ += p.vz;
-
-                    p.vx *= 0.94;
-                    p.vy *= 0.94;
-                    p.vz *= 0.94;
-
-                    // Oscilación lenta post-explosión
-                    p.currentX += Math.sin(elapsedTime * 0.0006 + p.seed) * 0.08;
-                    p.currentY += Math.cos(elapsedTime * 0.0006 + p.seed) * 0.08;
-                });
-
-            } else if (elapsedTime >= END_TEXT_SHOW && elapsedTime < END_CYCLE) {
-                // [FASE 4]: DESVANECIMIENTO PREVIO AL RE-INICIO
-                document.getElementById("text-reveal").classList.remove("active");
-                document.getElementById("hint-tag").classList.remove("visible");
-                if (!isDragging) { angleY += autoRotateSpeed * 0.15; }
-
-                particles.forEach(p => {
-                    p.currentX += p.vx;
-                    p.currentY += p.vy;
-                    p.currentZ += p.vz;
-
-                    p.vx *= 0.94;
-                    p.vy *= 0.94;
-                    p.vz *= 0.94;
-
-                    p.currentX += Math.sin(elapsedTime * 0.0006 + p.seed) * 0.08;
-                    p.currentY += Math.cos(elapsedTime * 0.0006 + p.seed) * 0.08;
-                });
-
-            } else if (elapsedTime >= END_CYCLE) {
-                // REINICIAR EL REMOLINO DE NUEVO
-                resetGalaxy();
-            }
-
-            // --- MOTOR DE PROYECCIÓN MATEMÁTICA EN 3D ---
-            const cosX = Math.cos(angleX);
-            const sinX = Math.sin(angleX);
-            const cosY = Math.cos(angleY);
-            const sinY = Math.sin(angleY);
-
-            const projected = [];
-            const cameraDistance = 550; 
-            const fov = 600; 
-
-            for (let i = 0; i < particles.length; i++) {
-                const p = particles[i];
-
-                const x1 = p.currentX * cosY - p.currentZ * sinY;
-                const z1 = p.currentX * sinY + p.currentZ * cosY;
-
-                const y2 = p.currentY * cosX - z1 * sinX;
-                const z2 = p.currentY * sinX + z1 * cosX;
-
-                const scale = fov / (fov + z2 + cameraDistance);
-
-                const projX = width / 2 + x1 * scale;
-                const projY = height / 2 + y2 * scale;
-
-                projected.push({
-                    x: projX,
-                    y: projY,
-                    z: z2, 
-                    color: p.color,
-                    size: p.size * scale
-                });
-            }
-
-            // Ordenamiento por profundidad (Algoritmo del pintor)
-            projected.sort((a, b) => b.z - a.z);
-
-            // Dibujado en lienzo
-            for (let i = 0; i < projected.length; i++) {
-                const p = projected[i];
-
-                if (p.x < 0 || p.x > width || p.y < 0 || p.y > height) continue;
-
-                ctx.beginPath();
-                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-                ctx.fillStyle = p.color;
-                ctx.fill();
-            }
-
-            requestAnimationFrame(render);
+        // Función para iniciar la aventura y reproducir música
+        function startAdventure() {
+            screenStart.classList.add('hidden');
+            screen360.classList.remove('hidden');
+            
+            // Intenta reproducir la música (requiere interacción previa del usuario)
+            audio.currentTime = 0;
+            audio.play().catch(error => {
+                console.log("El navegador bloqueó el autoplay temporalmente:", error);
+            });
         }
 
-        // --- RESPONSIVIDAD AL REDIMENSIONAR VENTANA ---
-        window.addEventListener('resize', () => {
-            width = canvas.width = window.innerWidth;
-            height = canvas.height = window.innerHeight;
-        });
+        // Función para activar la animación de entrada al túnel e ir al final
+        function triggerTunnel() {
+            tunnelOverlay.classList.add('animate-tunnel');
+            
+            // Espera a que la animación del túnel cubra la pantalla para hacer el cambio
+            setTimeout(() => {
+                screen360.classList.add('hidden');
+                screenEnd.classList.remove('hidden');
+                tunnelOverlay.classList.remove('animate-tunnel');
+            }, 1500); // Duración sincronizada con el CSS
+        }
 
-        // Lanzar la simulación
-        render();
+        // Función global para reiniciar la experiencia en cualquier momento
+        function resetToStart() {
+            // Detener y resetear audio
+            audio.pause();
+            audio.currentTime = 0;
+
+            // Resetear visibilidad de pantallas
+            screenEnd.classList.add('hidden');
+            screen360.classList.add('hidden');
+            tunnelOverlay.className = ''; // Limpia clases de animación
+            screenStart.classList.remove('hidden');
+            
+            // Opcional: Resetear la rotación de la cámara de A-Frame al volver
+            const camera = document.querySelector('[camera]');
+            if(camera) {
+                camera.setAttribute('rotation', '0 0 0');
+            }
+        }
     </script>
 </body>
 </html>
